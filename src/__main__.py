@@ -7,6 +7,7 @@ import re
 import time
 import datetime
 from google.protobuf import duration_pb2
+import argparse
 
 
 def publish_aws_cloudwatch():
@@ -103,24 +104,49 @@ CLOUD_PROVIDER_PUBLISHERS = [publish_aws_cloudwatch,
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description='Publish Prometheus metrics to cloud services.')
+    parser.add_argument('--all', action='store_true',
+                        help='Records metrics to all three cloud services')
+    parser.add_argument('--aws', action='store_true',
+                        help='Activates AWS metrics')
+    parser.add_argument('--azure', action='store_true',
+                        help='Activates Azure metrics')
+    parser.add_argument('--gc', action='store_true',
+                        help='Activates Google Cloud metrics')
+
+    parser.add_argument('--grpc', action='store_true',
+                        help='Publish gRPC metrics')
+    parser.add_argument('--schedulers', action='store_true',
+                        help='Publish scheduler metrics')
+    parser.add_argument('--stores', action='store_true',
+                        help='Publish store metrics')
+    parser.add_argument('--workers', action='store_true',
+                        help='Publish worker metrics')
+    parser.add_argument('--global', action='store_true',
+                        help='Publish global metrics')
+
+    args = parser.parse_args()
+
     prometheus_url = "http://prometheus.example.com:9090"
     prometheus = PrometheusConnect(url=prometheus_url)
 
-    query = "up"
-    result = prometheus.custom_query(query)
+    if args.all:
+        cloud_providers_indices = [0, 1, 2]  # AWS, Azure, Google Cloud
+    else:
+        cloud_providers_indices = []
+        if args.aws:
+            cloud_providers_indices.append(0)
+        if args.azure:
+            cloud_providers_indices.append(1)
+        if args.gc:
+            cloud_providers_indices.append(2)
 
-    print("------------------------------------------------")
-    print(result)
-    print("Choose a cloud service provider to publish to: ")
-    print("1) AWS CloudWatch")
-    print("2) Azure Monitor")
-    print("3) Google Cloud Monitoring")
-    print("------------------------------------------------")
+    selected_cloud_providers = [CLOUD_PROVIDER_PUBLISHERS[i]
+                                for i in cloud_providers_indices]
 
-    cloud_providers_indices = cloud_service_picker()
-
-    for cloud_provider_index in cloud_providers_indices:
-        CLOUD_PROVIDER_PUBLISHERS[cloud_provider_index]()
+    for cloud_provider in selected_cloud_providers:
+        cloud_provider()
 
 
 if __name__ == "__main__":

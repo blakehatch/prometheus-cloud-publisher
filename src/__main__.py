@@ -37,7 +37,11 @@ def publish_aws_cloudwatch():
         region_name=region,
     )
 
-    metric_name = "YourMetricName"
+    # https://github.com/TraceMachina/turbo-cache/issues/206 
+    # metric name for schedulers
+    metric_name = "stage"
+    # metric name stores
+    
     value = 42
 
     cloudwatch.put_metric_data(

@@ -1,13 +1,14 @@
 from prometheus_api_client import PrometheusConnect
 import boto3
 from azure.identity import DefaultAzureCredential
-from azure.monitor.query import MetricsQueryClient
+from azure.mgmt.monitor import MonitorManagementClient
 from google.cloud import monitoring_v3
 import re
 import time
 import datetime
 from google.protobuf import duration_pb2
 import argparse
+import dotenv
 
 
 def publish_aws_cloudwatch():
@@ -44,7 +45,8 @@ def publish_azure_monitor(metrics_namespace):
 
     credential = DefaultAzureCredential()
 
-    metrics_client = MetricsQueryClient(credential)
+    metrics_client = MonitorManagementClient(credential, subscription_id)
+
     metric_name = "YourMetricName"
 
     response = metrics_client.query(
@@ -183,7 +185,4 @@ def numeric_list_input_valid(input_string):
     pattern = r"^\d+(,\d+)*$"
 
     # Use re.match to check if the string matches the pattern
-    if re.match(pattern, input_string):
-        return True
-    else:
-        return False
+    return re.match(pattern, input_string)

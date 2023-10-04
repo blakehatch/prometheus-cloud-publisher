@@ -1,0 +1,13 @@
+# AWS Config:
+AWS_ACCESS_KEY=[YourAccessKey]
+AWS_SECRET_KEY=[YourSecretKey]
+REGION=us-east-1
+NAMESPACE=[YourNamespace]
+
+# Azure Config:
+RESOURCE_GROUP=[YourResourceGroup]
+SUBSCRIPTION_ID=[YourSubscriptionID]
+
+# Google Cloud Config:
+PROJECT_ID=[YourProjectID]
+PROJECT_NAME=[YourProjectName]

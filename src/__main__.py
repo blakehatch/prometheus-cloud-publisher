@@ -8,14 +8,28 @@ import time
 import datetime
 from google.protobuf import duration_pb2
 import argparse
-import dotenv
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# AWS Configuration
+aws_access_key = os.getenv("AWS_ACCESS_KEY")
+aws_secret_key = os.getenv("AWS_SECRET_KEY")
+region = os.getenv("REGION")
+namespace = os.getenv("NAMESPACE")
+
+# Azure Configuration
+resource_group = os.getenv("RESOURCE_GROUP")
+subscription_id = os.getenv("SUBSCRIPTION_ID")
+
+# Google Cloud Configuration
+project_id = os.getenv("PROJECT_ID")
+project_name = os.getenv("PROJECT_NAME")
 
 
 def publish_aws_cloudwatch():
-    aws_access_key = "YOUR_AWS_ACCESS_KEY"
-    aws_secret_key = "YOUR_AWS_SECRET_KEY"
-    region = "us-east-1"
-
     cloudwatch = boto3.client(
         "cloudwatch",
         aws_access_key_id=aws_access_key,
@@ -23,7 +37,6 @@ def publish_aws_cloudwatch():
         region_name=region,
     )
 
-    namespace = "YourNamespace"
     metric_name = "YourMetricName"
     value = 42
 
@@ -40,9 +53,6 @@ def publish_aws_cloudwatch():
 
 
 def publish_azure_monitor(metrics_namespace):
-    resource_group = "YourResourceGroup"
-    subscription_id = "YourSubscriptionID"
-
     credential = DefaultAzureCredential()
 
     metrics_client = MonitorManagementClient(credential, subscription_id)
@@ -62,10 +72,8 @@ def publish_azure_monitor(metrics_namespace):
 
 
 def publish_google_cloud_monitoring(interval):
-    project_id = "YourProjectID"
     client = monitoring_v3.MetricServiceClient()
 
-    project_name = f"projects/{project_id}"
     metric_name = "YourMetricName"
 
     monitored_resource = monitoring_v3.MonitoredResource(

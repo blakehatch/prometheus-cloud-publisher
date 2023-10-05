@@ -1,0 +1,16 @@
+{
+  "grpc": [],
+  "schedulers": ["stage", "exit_code", "connected_timestamp", "actions_completed", 
+    "run_acitons", "keep_alive", "notify_disconnect", "is_paused", "timeout", "priority", 
+    "load_timestamp", "insert_timestamp", "skip_cache_lookup", "platform_properties"],
+  "stores": ["read_buff_size", "active_drop_spawns", "temp_path", "content_path", "evicting_map", "evict_bytes",
+  "anchor_time", "max_seconds", "max_count", "sum_store_size", "oldest_item_timestamp", "oldest_item_age", "evicted_items", "evicted_bytes",
+  "lifetime_inserted_bytes", "replaced_bytes", "replaced_items", "removed_bytes", "removed_items", "item_size_stats", "verify_size", "verify_hash",
+  "size_verificaiton_failures", "hash_verification_failures"],
+  "workers": ["read_buff_size_bytes", "active_drop_spawns_total", "verify_size_enabled",  
+  "verify_hash_enabled", "size_verification_faulures_total", "hash_verification_failures_total",
+  "start_actions_received", "disconnects_received", "keep_alives_received", "preconditions", "", "max_bytes", "evict_bytes", "anchor_time_timestamp", "max_seconds",
+  "max_count", "sum_store_size_bytes", "items_in_store_total", "oldes_item_timestamp", "oldest_item_age_nanos", "evicted_items_total", "lifetime_inserted_bytes",
+  "replaced_bytes", "replaced_items_total", "removed_bytes", "removed_items_total", "item_size_bytes"],
+  "global_state": ["connected_clients", "server_start_time", "total_client_connections"]
+}

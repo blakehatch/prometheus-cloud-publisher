@@ -8,6 +8,7 @@ import time
 import datetime
 from google.protobuf import duration_pb2
 import argparse
+import json
 import os
 from dotenv import load_dotenv
 
@@ -29,7 +30,7 @@ project_id = os.getenv("PROJECT_ID")
 project_name = os.getenv("PROJECT_NAME")
 
 
-def publish_aws_cloudwatch():
+def publish_aws_cloudwatch(metric_names):
     cloudwatch = boto3.client(
         "cloudwatch",
         aws_access_key_id=aws_access_key,
@@ -37,74 +38,68 @@ def publish_aws_cloudwatch():
         region_name=region,
     )
 
-    # https://github.com/TraceMachina/turbo-cache/issues/206 
-    # metric name for schedulers
-    metric_name = "stage"
-    # metric name stores
-    
-    value = 42
+    for metric_name in metric_names:
+        value = 42  # You can replace this with the actual value for the metric
 
-    cloudwatch.put_metric_data(
-        Namespace=namespace,
-        MetricData=[
-            {
-                "MetricName": metric_name,
-                "Value": value,
-                "Unit": "Count",
-            },
-        ],
-    )
+        cloudwatch.put_metric_data(
+            Namespace=namespace,
+            MetricData=[
+                {
+                    "MetricName": metric_name,
+                    "Value": value,
+                    "Unit": "Count",
+                },
+            ],
+        )
 
 
-def publish_azure_monitor(metrics_namespace):
+def publish_azure_monitor(metrics_namespace, metric_names):
     credential = DefaultAzureCredential()
 
     metrics_client = MonitorManagementClient(credential, subscription_id)
 
-    metric_name = "YourMetricName"
+    for metric_name in metric_names:
+        response = metrics_client.query(
+            resource_uri=f"/subscriptions/{subscription_id}/resourceGroups/{resource_group}\
+            /providers/Microsoft.Compute/virtualMachines/YourVM",
+            metric_names=[metric_name],
+            timespan="2023-10-01T00:00:00Z/2023-10-02T00:00:00Z",
+            interval="PT1H",
+            aggregation=["Average"],
+            namespace=metrics_namespace)
 
-    response = metrics_client.query(
-        resource_uri=f"/subscriptions/{subscription_id}/resourceGroups/{resource_group}\
-        /providers/Microsoft.Compute/virtualMachines/YourVM",
-        metric_names=[metric_name],
-        timespan="2023-10-01T00:00:00Z/2023-10-02T00:00:00Z",
-        interval="PT1H",
-        aggregation=["Average"],
-        namespace=metrics_namespace)
-
-    print(response)
+        print(response)
 
 
-def publish_google_cloud_monitoring(interval):
+def publish_google_cloud_monitoring(interval, metric_names):
     client = monitoring_v3.MetricServiceClient()
-
-    metric_name = "YourMetricName"
 
     monitored_resource = monitoring_v3.MonitoredResource(
         type="global",
         labels={"project_id": project_id},
     )
 
-    descriptor = client.metric_descriptor_path(project_name, metric_name)
+    for metric_name in metric_names:
+        descriptor = client.metric_descriptor_path(project_name, metric_name)
 
-    now = time.time()
-    start_time = datetime.datetime.utcfromtimestamp(now)
-    end_time = start_time + datetime.timedelta(seconds=interval)
+        now = time.time()
+        start_time = datetime.datetime.utcfromtimestamp(now)
+        end_time = start_time + datetime.timedelta(seconds=interval)
 
-    point = monitoring_v3.Point(value=42)
-    series = monitoring_v3.TimeSeries(
-        metric=descriptor,
-        resource=monitored_resource,
-        points=[point],
-    )
+        point = monitoring_v3.Point(value=42)
+        series = monitoring_v3.TimeSeries(
+            metric=descriptor,
+            resource=monitored_resource,
+            points=[point],
+        )
 
-    client.create_time_series(
-        name=project_name,
-        time_series=[series],
-        interval=duration_pb2.Duration(seconds=interval),
-        start_time=start_time,
-        end_time=end_time,
-    )
+        client.create_time_series(
+            name=project_name,
+            time_series=[series],
+            interval=duration_pb2.Duration(seconds=interval),
+            start_time=start_time,
+            end_time=end_time,
+        )
 
 # Example usage:
 # publish_azure_monitor("YourMetricsNamespace")
@@ -117,33 +112,41 @@ CLOUD_PROVIDER_PUBLISHERS = [publish_aws_cloudwatch,
                              publish_google_cloud_monitoring]
 
 
+def load_metric_names_config():
+    with open('config.json', 'r') as config_file:
+        metric_names_config = json.load(config_file)
+    return metric_names_config
+
+
+metric_names_config = load_metric_names_config()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Publish Prometheus metrics to cloud services.')
-    parser.add_argument('--all', action='store_true',
-                        help='Records metrics to all three cloud services')
-    parser.add_argument('--aws', action='store_true',
-                        help='Activates AWS metrics')
-    parser.add_argument('--azure', action='store_true',
-                        help='Activates Azure metrics')
-    parser.add_argument('--gc', action='store_true',
-                        help='Activates Google Cloud metrics')
-
-    parser.add_argument('--grpc', action='store_true',
-                        help='Publish gRPC metrics')
-    parser.add_argument('--schedulers', action='store_true',
-                        help='Publish scheduler metrics')
-    parser.add_argument('--stores', action='store_true',
-                        help='Publish store metrics')
-    parser.add_argument('--workers', action='store_true',
-                        help='Publish worker metrics')
-    parser.add_argument('--global', action='store_true',
-                        help='Publish global metrics')
 
     args = parser.parse_args()
 
+    selected_metric_names = []
+    if args.grpc:
+        selected_metric_names.extend(metric_names_config["grpc"])
+    if args.schedulers:
+        selected_metric_names.extend(metric_names_config["schedulers"])
+    if args.stores:
+        selected_metric_names.extend(metric_names_config["stores"])
+    if args.workers:
+        selected_metric_names.extend(metric_names_config["workers"])
+    if args.global_metrics:
+        selected_metric_names.extend(metric_names_config["global"])
+
     prometheus_url = "http://prometheus.example.com:9090"
     prometheus = PrometheusConnect(url=prometheus_url)
+
+    # Fetch metrics from Prometheus for each selected metric name
+    for metric_name in selected_metric_names:
+        query = f'{metric_name}'  # Modify the query as needed
+        result = prometheus.custom_query(query)
+        print(f"Metrics for {metric_name}: {result}")
 
     if args.all:
         cloud_providers_indices = [0, 1, 2]  # AWS, Azure, Google Cloud
@@ -160,7 +163,7 @@ def main():
                                 for i in cloud_providers_indices]
 
     for cloud_provider in selected_cloud_providers:
-        cloud_provider()
+        cloud_provider(selected_metric_names)
 
 
 if __name__ == "__main__":

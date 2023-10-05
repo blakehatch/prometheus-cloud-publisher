@@ -12,20 +12,16 @@ import json
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# AWS Configuration
 aws_access_key = os.getenv("AWS_ACCESS_KEY")
 aws_secret_key = os.getenv("AWS_SECRET_KEY")
 region = os.getenv("REGION")
 namespace = os.getenv("NAMESPACE")
 
-# Azure Configuration
 resource_group = os.getenv("RESOURCE_GROUP")
 subscription_id = os.getenv("SUBSCRIPTION_ID")
 
-# Google Cloud Configuration
 project_id = os.getenv("PROJECT_ID")
 project_name = os.getenv("PROJECT_NAME")
 
@@ -39,7 +35,7 @@ def publish_aws_cloudwatch(metric_names):
     )
 
     for metric_name in metric_names:
-        value = 42  # You can replace this with the actual value for the metric
+        value = 42
 
         cloudwatch.put_metric_data(
             Namespace=namespace,
@@ -101,11 +97,6 @@ def publish_google_cloud_monitoring(interval, metric_names):
             end_time=end_time,
         )
 
-# Example usage:
-# publish_azure_monitor("YourMetricsNamespace")
-# publish_google_cloud_monitoring(3600)  # 3600 seconds interval
-# publish_to_aws_cloudwatch()
-
 
 CLOUD_PROVIDER_PUBLISHERS = [publish_aws_cloudwatch,
                              publish_azure_monitor,
@@ -142,9 +133,8 @@ def main():
     prometheus_url = "http://prometheus.example.com:9090"
     prometheus = PrometheusConnect(url=prometheus_url)
 
-    # Fetch metrics from Prometheus for each selected metric name
     for metric_name in selected_metric_names:
-        query = f'{metric_name}'  # Modify the query as needed
+        query = f'{metric_name}'
         result = prometheus.custom_query(query)
         print(f"Metrics for {metric_name}: {result}")
 
@@ -193,11 +183,8 @@ def cloud_service_picker():
 
 
 def numeric_list_input_valid(input_string):
-    # Remove spaces from the input string
     input_string = input_string.replace(" ", "")
 
-    # Define a regular expression pattern for the valid format
     pattern = r"^\d+(,\d+)*$"
 
-    # Use re.match to check if the string matches the pattern
     return re.match(pattern, input_string)

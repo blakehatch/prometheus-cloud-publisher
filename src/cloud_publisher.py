@@ -3,10 +3,13 @@ import boto3
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.monitor import MonitorManagementClient
 from google.cloud import monitoring_v3
+from google.api.monitored_resource_pb2 import MonitoredResource
+from google.protobuf.timestamp_pb2 import Timestamp
+from google.protobuf.duration_pb2 import Duration
+from google.protobuf.field_mask_pb2 import FieldMask
 import re
 import time
 import datetime
-from google.protobuf import duration_pb2
 import argparse
 import json
 import os
@@ -14,6 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+prometheus_url = os.getenv("PROMETHEUS_URL")
 aws_access_key = os.getenv("AWS_ACCESS_KEY")
 aws_secret_key = os.getenv("AWS_SECRET_KEY")
 region = os.getenv("REGION")
@@ -54,6 +58,8 @@ def publish_azure_monitor(metrics_namespace, metric_names):
 
     metrics_client = MonitorManagementClient(credential, subscription_id)
 
+    results = []
+
     for metric_name in metric_names:
         response = metrics_client.query(
             resource_uri=f"/subscriptions/{subscription_id}/resourceGroups/{resource_group}\
@@ -64,13 +70,16 @@ def publish_azure_monitor(metrics_namespace, metric_names):
             aggregation=["Average"],
             namespace=metrics_namespace)
 
-        print(response)
+        print("Azure RES: " + response)
+        results.append(response)
+
+    return results
 
 
 def publish_google_cloud_monitoring(interval, metric_names):
     client = monitoring_v3.MetricServiceClient()
 
-    monitored_resource = monitoring_v3.MonitoredResource(
+    monitored_resource = MonitoredResource(
         type="global",
         labels={"project_id": project_id},
     )
@@ -79,10 +88,17 @@ def publish_google_cloud_monitoring(interval, metric_names):
         descriptor = client.metric_descriptor_path(project_name, metric_name)
 
         now = time.time()
-        start_time = datetime.datetime.utcfromtimestamp(now)
-        end_time = start_time + datetime.timedelta(seconds=interval)
+        start_time = Timestamp()
+        start_time.FromDatetime(datetime.datetime.utcfromtimestamp(now))
+        end_time = Timestamp()
+        end_time.FromDatetime(start_time.ToDatetime() + datetime.timedelta(seconds=interval))
 
-        point = monitoring_v3.Point(value=42)
+        # Create a Point object using google.monitoring.v3.point_pb2
+        point = monitoring_v3.Point(
+            interval=Duration(seconds=interval),
+            value=42,
+        )
+
         series = monitoring_v3.TimeSeries(
             metric=descriptor,
             resource=monitored_resource,
@@ -92,9 +108,6 @@ def publish_google_cloud_monitoring(interval, metric_names):
         client.create_time_series(
             name=project_name,
             time_series=[series],
-            interval=duration_pb2.Duration(seconds=interval),
-            start_time=start_time,
-            end_time=end_time,
         )
 
 
@@ -130,7 +143,6 @@ def main():
     if args.global_metrics:
         selected_metric_names.extend(metric_names_config["global"])
 
-    prometheus_url = "http://prometheus.example.com:9090"
     prometheus = PrometheusConnect(url=prometheus_url)
 
     for metric_name in selected_metric_names:

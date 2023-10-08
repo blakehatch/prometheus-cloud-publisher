@@ -11,3 +11,5 @@ SUBSCRIPTION_ID=[YourSubscriptionID]
 # Google Cloud Config:
 PROJECT_ID=[YourProjectID]
 PROJECT_NAME=[YourProjectName]
+
+PROMETHEUS_URL=http://prometheus.example.com:9090

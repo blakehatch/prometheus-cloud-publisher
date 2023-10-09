@@ -31,15 +31,20 @@ If no flags are present all metrics available will be recorded.
 ### Usage
 Examples:
 ```sh
-python3 src/__main__.py --aws --global
+python3 src/cloud_publisher.py --aws --global
 ```
 Will record all global metrics to AWS.
 
 ```sh
-python3 src/__main__.py --all --schedulers
+python3 src/cloud_publisher.py --all --schedulers
 ```
 Will record scheduler metrics to all cloud providers.
 
+### Unit Tests
+In order to run unit tests use the following command:
+```sh
+python3 ./tests/test_unit_cloud_publisher.py
+```
 
 ### Configuration
 Add/Modify metrics and categories in the config.json file 

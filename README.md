@@ -15,7 +15,7 @@ Activates azure metrics.
 Activates google cloud metrics.
 
 
-### Flags for recording publishing subsets of metrics
+### Flags for recording published subsets of metrics
 --grpc
 
 --schedulers
@@ -26,19 +26,19 @@ Activates google cloud metrics.
 
 --global
 
-If no flags are present all metrics available will be published.
+If no flags are present all metrics available will be recorded.
 
 ### Usage
 Examples:
 ```sh
 python3 src/__main__.py --aws --global
 ```
-Will publish all global metrics to AWS
+Will record all global metrics to AWS.
 
 ```sh
 python3 src/__main__.py --all --schedulers
 ```
-Will publish scheduler metrics to all cloud providers.
+Will record scheduler metrics to all cloud providers.
 
 
 ### Configuration

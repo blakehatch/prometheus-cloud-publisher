@@ -5,9 +5,6 @@ from azure.mgmt.monitor import MonitorManagementClient
 from google.cloud import monitoring_v3
 from google.api.monitored_resource_pb2 import MonitoredResource
 from google.protobuf.timestamp_pb2 import Timestamp
-from google.protobuf.duration_pb2 import Duration
-from google.cloud.monitoring_v3.types import TimeInterval
-from google.protobuf.field_mask_pb2 import FieldMask
 import re
 import time
 import datetime
@@ -88,25 +85,23 @@ def publish_google_cloud_monitoring(interval, metric_names):
     for metric_name in metric_names:
         descriptor = f"projects/{project_name}/metricDescriptors/{metric_name}"
 
-        # Calculate the start_time and end_time based on the interval
         now = time.time()
         start_time = Timestamp()
         start_time.FromDatetime(datetime.datetime.utcfromtimestamp(now))
         end_time = Timestamp()
-        end_time.FromDatetime(start_time.ToDatetime() + datetime.timedelta(seconds=interval))
+        end_time.FromDatetime(start_time.ToDatetime() +
+                              datetime.timedelta(seconds=interval))
 
-        # Create a dictionary for the Point message
         point = {
             "interval": {
                 "start_time": start_time,
                 "end_time": end_time,
             },
             "value": {
-                "int64_value": 42,  # Replace with your desired value
+                "int64_value": 42,
             },
         }
 
-        # Create a dictionary for the TimeSeries message
         series = {
             "metric": descriptor,
             "resource": monitored_resource,
